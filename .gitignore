@@ -1,0 +1,4 @@
+/HWalletClient/target/
+/HWalletClient/blockstore.dat
+/HWalletClient/blockstore2.dat
+/HWalletClient/w.dat
