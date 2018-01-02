@@ -6,27 +6,37 @@
 package ro.pata.hwallet.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+import org.bitcoinj.core.Address;
 import org.bitcoinj.core.BlockChain;
 import org.bitcoinj.core.Coin;
 import static org.bitcoinj.core.Coin.COIN;
 import static org.bitcoinj.core.Coin.MILLICOIN;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.core.PeerGroup;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
 import static org.bitcoinj.core.Utils.HEX;
 import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.utils.BriefLogFormatter;
+import org.bitcoinj.wallet.SendRequest;
 import org.bitcoinj.wallet.UnreadableWalletException;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletTransaction;
@@ -50,8 +60,9 @@ public class WalletTools {
         BriefLogFormatter.init();
         try {
             wallet=Wallet.loadFromFile(new File("w.dat"));
+            wallet.autosaveToFile(new File("w.dat"), 1, TimeUnit.MINUTES, null);
             params = TestNet3Params.get();
-            blockStore = new SPVBlockStore(params,new File("blockstore2.dat"));
+            blockStore = new SPVBlockStore(params,new File("blockstore3.dat"));
             chain = new BlockChain(params, wallet, blockStore);
             peerGroup = new PeerGroup(params, chain);
         } catch (UnreadableWalletException | BlockStoreException ex) {
@@ -59,10 +70,20 @@ public class WalletTools {
         }
     }
     
+    public void Save(){
+        try {
+            wallet.saveToFile(new File("w.dat"));
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(WalletTools.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     public void ConnectToPeerNetwork(){
         try {
             peerGroup.start();
-            peerGroup.addAddress(new PeerAddress(params, InetAddress.getByName("136.243.23.208")));
+            //peerGroup.addAddress(new PeerAddress(params, InetAddress.getByName("136.243.23.208")));
+            //peerGroup.addAddress(new PeerAddress(params, InetAddress.getByName("176.9.89.217")));
+            peerGroup.addAddress(new PeerAddress(params, InetAddress.getByName("176.9.89.217")));
             peerGroup.waitForPeers(1).get();
             peerGroup.downloadBlockChain();
         } catch (UnknownHostException | InterruptedException | ExecutionException ex) {
@@ -72,26 +93,127 @@ public class WalletTools {
     
     public void ShowWallet(){
         System.out.println(wallet);
+        
+        List<ECKey> keyList=wallet.getImportedKeys();
+        for(ECKey k:keyList){
+            System.out.println(k.toAddress(params).toBase58()+" : "+k.toStringWithPrivate(null, params));
+        }
     }
     
-    public void KeyCreate(){
-        ECKey key=new ECKey();
+    public void ShowExternalKey(){
+        try {
+            ECKey key=ECKey.fromASN1(Files.toByteArray(new File("externalKey_01.dat")));
+            ECKey pub=ECKey.fromPublicOnly(key.getPubKey());            
+            Address adr=pub.toAddress(params);
+            System.out.println("Address: "+adr.toBase58());
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(WalletTools.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void ExternalKeyCreate(){
+        try {
+            ECKey key=new ECKey();
+            byte[] k=key.toASN1();
+            Files.write(k, new File("externalKey.dat"));   
+            
+            byte[] priv=new byte[1];priv[0]=3; //Generate a fake private key
+            //wallet.importKey(ECKey.fromPublicOnly(key.getPubKey()));
+            wallet.importKey(ECKey.fromPrivateAndPrecalculatedPublic(priv, key.getPubKey()));
+            
+            System.out.println("Adress: "+ECKey.fromPrivateAndPrecalculatedPublic(priv, key.getPubKey()).toAddress(params).toBase58());
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(WalletTools.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     public void ShowTransactions(){
         Iterable<WalletTransaction> trans=wallet.getWalletTransactions();
+        Coin available;
+        
         for(WalletTransaction t:trans){
             System.out.println("--------------------------------");
             //System.out.println(t.getTransaction());
             System.out.println("TXID: "+t.getTransaction().getHashAsString());
-            if(t.getTransaction().getHashAsString().equals("03d36babf3182aae18fa9b1fdc67b11075fde5b1b88b98947e4b136dc8379676")){
-                byte[] tx=t.getTransaction().bitcoinSerialize();
-                System.out.println(HEX.encode(tx));
+
+            //byte[] tx=t.getTransaction().bitcoinSerialize();
+            //System.out.println(HEX.encode(tx));
+
+            for(TransactionInput o:t.getTransaction().getInputs()){
+                System.out.println("In: "+o.getValue()+" from:"+o.getFromAddress());
             }
+            
+            available=Coin.ZERO;
             for(TransactionOutput o:t.getTransaction().getOutputs()){
-                System.out.println("Out adr: "+o.getAddressFromP2PKHScript(params).toString());
+                String so=o.getValue().toFriendlyString();
+                so+=" to:"+o.getAddressFromP2PKHScript(params).toString();
+                
+                if(o.isMine(wallet) && o.isAvailableForSpending()){
+                    available=available.add(o.getValue());
+                    System.out.println("Out: "+so);
+                }
+            }
+            System.out.println("Available to spend: "+available.toFriendlyString());
+        }
+    }
+    
+    public void testTransaction(){
+        Transaction tx=new Transaction(params);
+        Transaction txsource=null;
+        
+        Map<Sha256Hash,Transaction> txunspent=wallet.getTransactionPool(WalletTransaction.Pool.UNSPENT);
+        for(Sha256Hash txhash: txunspent.keySet()){
+            if(txhash.equals(Sha256Hash.wrap("9bf19819a2c4f0c8a7f9319c22a2c140eede31a28a633d899206e5a78660f2e7"))){
+                System.out.println("Available: "+txunspent.get(txhash).getValueSentToMe(wallet));
+                txsource=txunspent.get(txhash);
+                break;
             }
         }
+        
+        
+        if(txsource!=null) {
+            try {
+                List<TransactionOutput> outs=txsource.getWalletOutputs(wallet);
+                for(TransactionOutput out:outs){
+                    if(out.isMine(wallet) && out.isAvailableForSpending()){
+                        tx.addInput(out);                    
+                        System.out.println("Input added: "+out);
+                    }
+                }
+                
+                tx.addOutput(valueOf(0,10), Address.fromBase58(params, "muPciPng1hpVuu5Z6gGZNztEfXBp7DJJFD")); //Cont incasari
+                SendRequest req=SendRequest.forTx(tx);
+                req.changeAddress=Address.fromBase58(params, "mpbmESLjpHCZQ71T9nL6FzdCGz2dTytuW4");
+                req.recipientsPayFees=true;
+                wallet.completeTx(req);
+                
+                try{
+                    System.out.print("Verify...");
+                    tx.getInputs().get(0).verify();
+                    System.out.println("passed");
+                } catch(ScriptException ex){
+                    System.out.println("failed");
+                }
+                
+            } catch (InsufficientMoneyException ex) {
+                java.util.logging.Logger.getLogger(WalletTools.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        }
+        
+        //SendRequest req = SendRequest.to(to, c);
+        
+        //byte[] txraw=tx.bitcoinSerialize();
+        //System.out.println(HEX.encode(txraw));
+        
+        System.out.println(tx);
+    }
+    
+    public void newKey(){
+        ECKeyHW key=new ECKeyHW();
+        System.out.println("New key address: "+key.toAddress(params));
+        wallet.importKey(key);
+        Save();
     }
     
     public void test() throws IOException, UnreadableWalletException, BlockStoreException, InterruptedException, ExecutionException{

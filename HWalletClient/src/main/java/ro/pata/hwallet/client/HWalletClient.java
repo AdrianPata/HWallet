@@ -36,10 +36,24 @@ public class HWalletClient {
                 case "st":
                     wt.ShowTransactions();
                     break;
+                case "tt":
+                    wt.testTransaction();
+                    break;
+                case "nk":
+                    wt.newKey();
+                    break;
+                case "enk":
+                    wt.ExternalKeyCreate();
+                    break;
+                case "sek":
+                    wt.ShowExternalKey();
+                    break;
                 default:
                     System.out.println("Unknown command.");
             }
 
         }
+        
+        wt.Save();
     }  
 }
