@@ -48,6 +48,9 @@ public class HWalletClient {
                 case "sek":
                     wt.ShowExternalKey();
                     break;
+                case "ns":
+                    wt.newSigner();
+                    break;                    
                 default:
                     System.out.println("Unknown command.");
             }

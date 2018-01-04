@@ -216,6 +216,12 @@ public class WalletTools {
         Save();
     }
     
+    public void newSigner(){
+        //wallet.addTransactionSigner(new HWTransactionSigner());
+        System.out.println("Signers: "+wallet.getTransactionSigners().size());
+        //Save();
+    }
+    
     public void test() throws IOException, UnreadableWalletException, BlockStoreException, InterruptedException, ExecutionException{
         
         
