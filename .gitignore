@@ -2,3 +2,6 @@
 /HWalletClient/blockstore.dat
 /HWalletClient/blockstore2.dat
 /HWalletClient/w.dat
+/ECTest/target/
+/SatoChipApplet/nbproject/private/
+/ledger-javacard/nbproject/private/
