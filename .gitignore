@@ -5,3 +5,6 @@
 /ECTest/target/
 /SatoChipApplet/nbproject/private/
 /ledger-javacard/nbproject/private/
+/HWalletApplet/build/
+/HWalletApplet/dist/
+/HWalletApplet/nbproject/private/
