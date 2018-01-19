@@ -42,6 +42,7 @@ import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 /**
  *
@@ -103,9 +104,12 @@ public class WalletTools {
     public void ShowExternalKey(){
         try {
             ECKey key=ECKey.fromASN1(Files.toByteArray(new File("externalKey_01.dat")));
+            key=key.decompress();
             ECKey pub=ECKey.fromPublicOnly(key.getPubKey());            
             Address adr=pub.toAddress(params);
             System.out.println("Address: "+adr.toBase58());
+            
+            System.out.println(key.toStringWithPrivate(null, params));
         } catch (IOException ex) {
             java.util.logging.Logger.getLogger(WalletTools.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -195,6 +199,8 @@ public class WalletTools {
                     System.out.println("failed");
                 }
                 
+                System.out.println("Transaction: "+Hex.toHexString(tx.unsafeBitcoinSerialize()));
+                
             } catch (InsufficientMoneyException ex) {
                 java.util.logging.Logger.getLogger(WalletTools.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -210,7 +216,7 @@ public class WalletTools {
     }
     
     public void newKey(){
-        ECKeyHW key=new ECKeyHW();
+        ECKey key=new ECKey();
         System.out.println("New key address: "+key.toAddress(params));
         wallet.importKey(key);
         Save();

@@ -14,6 +14,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bitcoinj.core.BitcoinSerializer;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
@@ -42,7 +43,7 @@ public class HWTransactionSigner extends StatelessTransactionSigner{
 
     @Override
     public boolean signInputs(ProposedTransaction propTx, KeyBag keyBag) {
-        Transaction tx = propTx.partialTx;
+        Transaction tx=propTx.partialTx;
         int numInputs = tx.getInputs().size();
         int i=0;
         for(TransactionInput txIn:tx.getInputs()){
