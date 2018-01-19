@@ -19,27 +19,27 @@ import org.spongycastle.util.encoders.Hex;
 public class MainTest {
     public static void main(String[] args) throws IOException{
         Smartcard sc=new Smartcard();
-        //sc.test();        
-        testSig();
+        sc.test();        
+        //testSig();
     }
     
     public static void testSig() throws IOException{
         //ECKey key=ECKey.fromASN1(Files.readAllBytes(Paths.get("key.der")));
         //ECKey key=ECKey.fromPrivate(Hex.decode("EB9361012C48490B3E8FC0E4C9BE3D763ABBC42D3C23CDE729E02D29720AFF78"));
-        ECKey key=ECKey.fromPublicOnly(Hex.decode("04013F3343BD902785500B4B548B1555C263EF75D75869625AA7C782645BD79DE07CFD8B3C4D10B0EAB8BB4A3259FECF0935004E51720013393F24637BFA062678"));
+        ECKey key=ECKey.fromPublicOnly(Hex.decode("04df428c714234365ae047e7a640ffbd2a5283ec9482fc24716f7338034855546392334e520be70215cf46976d78967d6fa4d0d740996939fac85a8a62d88ebb01"));
         System.out.println(key.decompress().toStringWithPrivate(null, null));
         
         
         
         
         
-        byte[] msg="ADI".getBytes();
+        byte[] msg="Cotoi Vasile".getBytes();
         System.out.println("msg: "+HEX.encode(msg));
         Sha256Hash msgh=Sha256Hash.of(msg);
         System.out.println("msgh: "+msgh);
         
         ECKey.ECDSASignature sig;//=key.sign(msgh);       
-        sig=ECKey.ECDSASignature.decodeFromDER(Hex.decode("30450221008E5CA6F321F19A4B987FBFBDBAAA5C418F5F999850617350EFAEAD3D75560EBD02203722C5FCEBDFD2B993AF3FD0EFD95D1F285604D727096DEDE8F2010475557BAA"));
+        sig=ECKey.ECDSASignature.decodeFromDER(Hex.decode("3045022022C4801C7546FB2C536746B3A557027B1FE11B822EFD9CD9F0588E163825224B0221009616846C1A9372B6834A31EC9F8FEEAB2A3132D8375EC93C7E33A0EA93B48C55"));
         
       
         System.out.println("verif: "+key.verify(msgh, sig)); 

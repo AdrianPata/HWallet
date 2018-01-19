@@ -20,6 +20,7 @@ public class Secp256k1 {
 	// JC API 2.2.2 does not define these constants:
 	public final static byte ALG_ECDSA_SHA_256= (byte) 33;
 	public final static byte ALG_EC_SVDP_DH_PLAIN= (byte) 3; //https://javacard.kenai.com/javadocs/connected/javacard/security/KeyAgreement.html#ALG_EC_SVDP_DH_PLAIN
+        public final static byte ALG_EC_SVDP_DH_PLAIN_XY = (byte)6; // constant from JavaCard 3.0.5
 	public final static short LENGTH_EC_FP_256= (short) 256;
 	
 	//Bitcoin: default parameters for EC curve secp256k1

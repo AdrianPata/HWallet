@@ -30,7 +30,6 @@ import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
-import static org.bitcoinj.core.Utils.HEX;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.store.BlockStoreException;
@@ -56,10 +55,13 @@ public class WalletTools {
     private SPVBlockStore blockStore;
     private BlockChain chain;
     private PeerGroup peerGroup;
+    private SmartCard sc;
     
     public WalletTools(){
         BriefLogFormatter.init();
         try {
+            sc=new SmartCard();
+            
             wallet=Wallet.loadFromFile(new File("w.dat"));
             wallet.autosaveToFile(new File("w.dat"), 1, TimeUnit.MINUTES, null);
             params = TestNet3Params.get();
