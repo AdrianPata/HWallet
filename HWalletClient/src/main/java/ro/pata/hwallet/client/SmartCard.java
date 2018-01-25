@@ -60,6 +60,21 @@ public class SmartCard {
         return adrList;
     }
     
+    public byte[] Sign(Integer keyNo,byte[] data){
+        String keyNoStr=String.format("%2s",Integer.toHexString(keyNo)).replace(" ", "0");
+        String dataLenStr=String.format("%2s",Integer.toHexString(data.length)).replace(" ", "0");
+        String dataStr=Hex.toHexString(data);
+        
+        System.out.println("--- Data Signer ---");
+        System.out.println("keyNo: "+keyNoStr);
+        System.out.println("dataLen: "+dataLenStr);
+        System.out.println("data: "+dataStr);
+        
+        ResponseAPDU r=exec(channel,"8007"+keyNoStr+"00"+dataLenStr+dataStr,"signature");
+        
+        return r.getData();
+    }
+    
     public void test(){
         ResponseAPDU r;
 

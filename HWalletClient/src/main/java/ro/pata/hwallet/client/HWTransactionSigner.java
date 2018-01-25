@@ -46,6 +46,10 @@ public class HWTransactionSigner extends StatelessTransactionSigner{
         Transaction tx=propTx.partialTx;
         int numInputs = tx.getInputs().size();
         int i=0;
+        
+        SmartCard smartcard=SmartCard.getInstance();
+        List<String> availableHWAddresses=smartcard.getWalletAddresses();
+        
         for(TransactionInput txIn:tx.getInputs()){
             try {
                 // We assume if its already signed, its hopefully got a SIGHASH type that will not invalidate when
@@ -62,18 +66,25 @@ public class HWTransactionSigner extends StatelessTransactionSigner{
             Script scriptPubKey = txIn.getConnectedOutput().getScriptPubKey();            
             Script inputScript = txIn.getScriptSig();
             
+            /*
             ECKey key=null;
             try {
                 key=ECKey.fromASN1(Files.readAllBytes(Paths.get("externalKey_01.dat")));
+                key=new ECKeyHW(key);
             } catch (IOException ex) {
                 Logger.getLogger(HWTransactionSigner.class.getName()).log(Level.SEVERE, null, ex);
             }
+            */
             
             byte[] script = redeemData.redeemScript.getProgram();
             
-            if(txIn.getFromAddress().equals(key.toAddress(TestNet3Params.get()))){
+            if(availableHWAddresses.contains(txIn.getFromAddress().toString())){
+            //if(txIn.getFromAddress().equals(key.toAddress(TestNet3Params.get()))){
                 System.out.println("Found external key...");
-                TransactionSignature signature = tx.calculateSignature(i, key, script, Transaction.SigHash.ALL, false);
+                ECKey key=new ECKeyHW(txIn.getFromAddress().toString());
+                
+                //This is not a standard bitcoinj function. This one will provide to the key a hash calculated only once. 
+                TransactionSignature signature = tx.calculateSignatureHW(i, key, script, Transaction.SigHash.ALL, false);
                 
                 int sigIndex = 0;
                 
@@ -100,7 +111,7 @@ public class HWTransactionSigner extends StatelessTransactionSigner{
             
             i++;
         }
-        return false;
+        return true;
     }
     
 }

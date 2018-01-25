@@ -169,7 +169,7 @@ public class WalletTools {
         
         for(TransactionOutput o:getSpendableTransactions()){        
             if(availableHWAddresses.contains(o.getAddressFromP2PKHScript(params).toString()))
-                System.out.println(o.getValue().toFriendlyString()+" Adr: "+o.getAddressFromP2PKHScript(params)+" TXID: "+o.getParentTransactionHash()+" "+o.getIndex());
+                System.out.println(o.getValue()+" Adr: "+o.getAddressFromP2PKHScript(params)+" TXID: "+o.getParentTransactionHash()+" "+o.getIndex());
         }      
     }
     

@@ -6,6 +6,7 @@
 package ro.pata.hwallet.client;
 
 import java.math.BigInteger;
+import java.util.List;
 import javax.annotation.Nullable;
 import org.bitcoin.NativeSecp256k1;
 import org.bitcoin.NativeSecp256k1Util;
@@ -20,6 +21,7 @@ import org.spongycastle.crypto.params.ECPrivateKeyParameters;
 import org.spongycastle.crypto.params.KeyParameter;
 import org.spongycastle.crypto.signers.ECDSASigner;
 import org.spongycastle.crypto.signers.HMacDSAKCalculator;
+import org.spongycastle.util.encoders.Hex;
 
 /**
  *
@@ -27,9 +29,11 @@ import org.spongycastle.crypto.signers.HMacDSAKCalculator;
  */
 public class ECKeyHW extends ECKey {
     private byte[] dataToSign;
+    private String address;
     
-    public ECKeyHW(ECKey k){
-        super(k.getPrivKeyBytes(),k.getPubKey());
+    public ECKeyHW(String address){
+        //super(k.getPrivKeyBytes(),k.getPubKey());
+        this.address=address;
     }
     
     @Override
@@ -44,10 +48,19 @@ public class ECKeyHW extends ECKey {
     
     @Override
     protected ECDSASignature doSign(Sha256Hash input, BigInteger privateKeyForSigning) {
-        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
-        ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(privateKeyForSigning, CURVE);
-        signer.init(true, privKey);
-        BigInteger[] components = signer.generateSignature(input.getBytes());
-        return new ECDSASignature(components[0], components[1]).toCanonicalised();
+        SmartCard smartcard=SmartCard.getInstance();
+        List<String> availableHWAddresses=smartcard.getWalletAddresses();
+        
+        Integer keyNo=availableHWAddresses.indexOf(address);
+        byte[] signature=smartcard.Sign(keyNo, input.getBytes());
+        
+        //ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
+        //ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(privateKeyForSigning, CURVE);
+        //signer.init(true, privKey);
+        //BigInteger[] components = signer.generateSignature(Sha256Hash.of(input.getBytes()).getBytes());
+        //return new ECDSASignature(components[0], components[1]).toCanonicalised();
+        
+        ECKey.ECDSASignature sig=ECKey.ECDSASignature.decodeFromDER(signature).toCanonicalised();
+        return sig;
     }       
 }
