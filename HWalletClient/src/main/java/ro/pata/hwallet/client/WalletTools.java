@@ -36,6 +36,7 @@ import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.utils.BriefLogFormatter;
+import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.SendRequest;
 import org.bitcoinj.wallet.UnreadableWalletException;
 import org.bitcoinj.wallet.Wallet;
@@ -169,18 +170,19 @@ public class WalletTools {
         
         for(TransactionOutput o:getSpendableTransactions()){        
             if(availableHWAddresses.contains(o.getAddressFromP2PKHScript(params).toString()))
-                System.out.println(o.getValue()+" Adr: "+o.getAddressFromP2PKHScript(params)+" TXID: "+o.getParentTransactionHash()+" "+o.getIndex());
+                System.out.println(o.getValue().toFriendlyString()+" Adr: "+o.getAddressFromP2PKHScript(params)+" TXID: "+o.getParentTransactionHash()+" "+o.getIndex());
         }      
     }
     
-    //A string made of 4 parameters
+    //A string made of 5 parameters
     //1: the command to this procedure "p"
     //2: transaction hash
     //3: output index
     //4: address to pay to
+    //5: ammount
     public void payToAddress(String ln){
         String[] com=ln.split(" ");
-        if(com.length!=4){
+        if(com.length!=5){
             System.out.println("Incorrect parametters.");
             return;
         }
@@ -189,6 +191,7 @@ public class WalletTools {
         Integer outputIndex=Integer.parseInt(com[2]);
         String addressDest=com[3];
         TransactionOutput outputToUse=null;
+        Coin valueToPay=Coin.parseCoin(com[4]);
         
         for(TransactionOutput o:getSpendableTransactions()){
             if(o.getParentTransactionHash().toString().equals(transactionHash) && o.getIndex()==outputIndex){
@@ -201,9 +204,14 @@ public class WalletTools {
             return;
         }
         
+        if(valueToPay.compareTo(outputToUse.getValue())>0){
+            System.out.println("Unable to pay "+valueToPay.toFriendlyString()+". Available "+outputToUse.getValue().toFriendlyString()+".");
+            return;
+        }
+        
         Transaction tx=new Transaction(params);
         tx.addInput(outputToUse);
-        tx.addOutput(valueOf(0,10), Address.fromBase58(params, addressDest)); //Pay to this address
+        tx.addOutput(valueToPay, Address.fromBase58(params, addressDest)); //Pay to this address
         
         SendRequest req=SendRequest.forTx(tx);
         req.changeAddress=outputToUse.getAddressFromP2PKHScript(params); //Change address set to the same address used for payment
@@ -212,6 +220,7 @@ public class WalletTools {
             wallet.completeTx(req);
         } catch (InsufficientMoneyException ex) {
             System.out.println(ex.getMessage());
+            return;
         }
         
         try{
@@ -220,8 +229,14 @@ public class WalletTools {
             System.out.println("passed");
         } catch(ScriptException ex){
             System.out.println("failed");
+            return;
         }
         
+        System.out.println("Txid: "+tx.getHashAsString());
+        wallet.commitTx(tx);
+        Threading.waitForUserCode();
+        wallet.setTransactionBroadcaster(peerGroup);
+        Save();
     }
     
     public void testTransaction(){
