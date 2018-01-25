@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -55,12 +56,12 @@ public class WalletTools {
     private SPVBlockStore blockStore;
     private BlockChain chain;
     private PeerGroup peerGroup;
-    private SmartCard sc;
+    private SmartCard smartCard;
     
     public WalletTools(){
         BriefLogFormatter.init();
         try {
-            sc=new SmartCard();
+            smartCard=new SmartCard();
             
             wallet=Wallet.loadFromFile(new File("w.dat"));
             wallet.autosaveToFile(new File("w.dat"), 1, TimeUnit.MINUTES, null);
@@ -124,7 +125,6 @@ public class WalletTools {
             Files.write(k, new File("externalKey.dat"));   
             
             byte[] priv=new byte[1];priv[0]=3; //Generate a fake private key
-            //wallet.importKey(ECKey.fromPublicOnly(key.getPubKey()));
             wallet.importKey(ECKey.fromPrivateAndPrecalculatedPublic(priv, key.getPubKey()));
             
             System.out.println("Adress: "+ECKey.fromPrivateAndPrecalculatedPublic(priv, key.getPubKey()).toAddress(params).toBase58());
@@ -160,6 +160,29 @@ public class WalletTools {
                 }
             }
             System.out.println("Available to spend: "+available.toFriendlyString());
+        }
+    }
+    
+    //Show only outputs in hardware wallet
+    public void showSpendableOutputs(){
+        List<String> availableHWAddresses=smartCard.getWalletAddresses();
+        
+        for(TransactionOutput o:getSpendableTransactions()){        
+            if(availableHWAddresses.contains(o.getAddressFromP2PKHScript(params).toString()))
+                System.out.println(o.getValue().toFriendlyString()+" Adr: "+o.getAddressFromP2PKHScript(params)+" TXID: "+o.getParentTransactionHash()+" "+o.getIndex());
+        }      
+    }
+    
+    //A string made of 4 parameters
+    //1: the command to this procedure "p"
+    //2: transaction hash
+    //3: output index
+    //4: address to pay to
+    public void payToAddress(String ln){
+        String[] com=ln.split(" ");
+        if(com.length!=4){
+            System.out.println("Incorrect parametters.");
+            return;
         }
     }
     
@@ -224,6 +247,7 @@ public class WalletTools {
         Save();
     }
     
+    //Adds a signer to the wallet. This is saved to wallet file and is available in the future.
     public void newSigner(){
         //wallet.addTransactionSigner(new HWTransactionSigner());
         System.out.println("Signers: "+wallet.getTransactionSigners().size());
@@ -287,6 +311,21 @@ public class WalletTools {
 //        do{
 //            Thread.sleep(1000);
 //        }while(true);
+    }
+    
+    private List<TransactionOutput> getSpendableTransactions(){
+        Iterable<WalletTransaction> trans=wallet.getWalletTransactions();
+        List<TransactionOutput> spendableOutputs=new ArrayList<>();
+        
+        for(WalletTransaction t:trans){
+            for(TransactionOutput o:t.getTransaction().getOutputs()){
+                if(o.isMine(wallet) && o.isAvailableForSpending()){
+                    spendableOutputs.add(o);
+                }
+            }
+        }
+        
+        return spendableOutputs;
     }
     
     public static Coin valueOf(final int coins, final int mili) {

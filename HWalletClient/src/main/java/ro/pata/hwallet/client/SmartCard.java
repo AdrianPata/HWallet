@@ -5,6 +5,7 @@
  */
 package ro.pata.hwallet.client;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,6 +35,22 @@ public class SmartCard {
         if(r.getSW()!=0x9000){
             System.out.println("Error: Smartcard not available.");
         }
+    }
+    
+    public List<String> getWalletAddresses(){
+        List<String> adrList=new ArrayList<>();
+        ResponseAPDU r;
+        r=exec(channel,"8008000000","get registered keys"); 
+        //The first byte in r[] contains the number of keys on card
+        byte totalKeys=r.getData()[0];
+        for(int i=0;i<totalKeys;i++){
+            //P1 is the key number, translated into String from i
+            r=exec(channel,"8002"+String.format("%2s",Integer.toHexString(i)).replace(" ", "0")+"0000","get pub key");
+            ECKey key=getECKeyFromPublicUncompressedByteArray(r.getData());
+            adrList.add(key.toAddress(TestNet3Params.get()).toString());
+        }
+        
+        return adrList;
     }
     
     public void test(){
@@ -100,5 +117,16 @@ public class SmartCard {
             Logger.getLogger(SmartCard.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
+    }
+    
+    private ECKey getECKeyFromPublicUncompressedByteArray(byte[] d){
+        byte[] t=new byte[33];
+        t[0]=0x03; //Change the first byte from 04 (uncompressed) to 03 (compressed)
+        //Copy just the x part of the public key
+        for(int it=1;it<=32;it++){
+            t[it]=d[it];
+        }
+        ECKey key=ECKey.fromPublicOnly(t);        
+        return key;
     }
 }

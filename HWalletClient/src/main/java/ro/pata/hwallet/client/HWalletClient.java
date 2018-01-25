@@ -21,11 +21,11 @@ public class HWalletClient {
     
     public static void main(String[] args) throws UnreadableWalletException, BlockStoreException, UnknownHostException, InterruptedException, ExecutionException, IOException, InsufficientMoneyException{
         Scanner sc = new Scanner(System.in);
-        String com;
+        String ln,com;
         WalletTools wt=new WalletTools();
         
-        while(!(com=sc.nextLine()).equals("x")){
-            
+        while(!(ln=sc.nextLine()).equals("x")){
+            com=ln.split(" ")[0];
             switch(com){
                 case "con":
                     wt.ConnectToPeerNetwork();
@@ -50,7 +50,13 @@ public class HWalletClient {
                     break;
                 case "ns":
                     wt.newSigner();
-                    break;                    
+                    break; 
+                case "sso":
+                    wt.showSpendableOutputs();
+                    break;
+                case "p":
+                    wt.payToAddress(ln);
+                    break;
                 default:
                     System.out.println("Unknown command.");
             }
