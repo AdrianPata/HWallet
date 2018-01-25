@@ -55,7 +55,8 @@ public class HWalletClient {
                     wt.showSpendableOutputs();
                     break;
                 case "p":
-                    wt.payToAddress(ln);
+                    //wt.payToAddress(ln);
+                    wt.payToAddress("p 9bf19819a2c4f0c8a7f9319c22a2c140eede31a28a633d899206e5a78660f2e7 0 muPciPng1hpVuu5Z6gGZNztEfXBp7DJJFD");
                     break;
                 default:
                     System.out.println("Unknown command.");

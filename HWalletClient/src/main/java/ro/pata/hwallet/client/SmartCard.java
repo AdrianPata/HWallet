@@ -25,10 +25,17 @@ import org.spongycastle.util.encoders.Hex;
  * @author 10051644
  */
 public class SmartCard {
+    static private SmartCard instance;
     private Card card;
     private CardChannel channel;
     
-    public SmartCard() {
+    public static SmartCard getInstance(){
+        if(instance==null) instance=new SmartCard();
+        
+        return instance;
+    }
+    
+    private SmartCard() {
         card=init();
         channel = card.getBasicChannel();
         ResponseAPDU r=exec(channel,"00A404000657BDE83637647F","select");

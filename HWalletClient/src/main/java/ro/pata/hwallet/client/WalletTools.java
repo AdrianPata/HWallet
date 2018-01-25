@@ -61,7 +61,7 @@ public class WalletTools {
     public WalletTools(){
         BriefLogFormatter.init();
         try {
-            smartCard=new SmartCard();
+            smartCard=SmartCard.getInstance();
             
             wallet=Wallet.loadFromFile(new File("w.dat"));
             wallet.autosaveToFile(new File("w.dat"), 1, TimeUnit.MINUTES, null);
@@ -184,6 +184,44 @@ public class WalletTools {
             System.out.println("Incorrect parametters.");
             return;
         }
+        
+        String transactionHash=com[1];
+        Integer outputIndex=Integer.parseInt(com[2]);
+        String addressDest=com[3];
+        TransactionOutput outputToUse=null;
+        
+        for(TransactionOutput o:getSpendableTransactions()){
+            if(o.getParentTransactionHash().toString().equals(transactionHash) && o.getIndex()==outputIndex){
+                outputToUse=o;
+            }
+        }
+        
+        if(outputToUse==null){
+            System.out.println("Transaction not found.");
+            return;
+        }
+        
+        Transaction tx=new Transaction(params);
+        tx.addInput(outputToUse);
+        tx.addOutput(valueOf(0,10), Address.fromBase58(params, addressDest)); //Pay to this address
+        
+        SendRequest req=SendRequest.forTx(tx);
+        req.changeAddress=outputToUse.getAddressFromP2PKHScript(params); //Change address set to the same address used for payment
+        req.recipientsPayFees=true;
+        try {
+            wallet.completeTx(req);
+        } catch (InsufficientMoneyException ex) {
+            System.out.println(ex.getMessage());
+        }
+        
+        try{
+            System.out.print("Verify...");
+            tx.getInputs().get(0).verify();
+            System.out.println("passed");
+        } catch(ScriptException ex){
+            System.out.println("failed");
+        }
+        
     }
     
     public void testTransaction(){
