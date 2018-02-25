@@ -41,20 +41,28 @@ public class Smartcard {
             //Sign data
             //exec(channel,"800700000C436f746f6920566173696c65","signature");
             
+            //Total keys
+            exec(channel,"8008000000","registered keys"); 
+            
+            //GetKey
+            //exec(channel,"8002000000","pub key");
+            //exec(channel,"8003000000","priv key");
+            
+            
             //Keys status
-            r=exec(channel,"8008000000","registered keys"); 
-            byte totalKeys=r[0];
-            for(int i=0;i<totalKeys;i++){ //The first byte in r[] contains the number of keys on card
-                r=exec(channel,"8002"+String.format("%2s",Integer.toHexString(i)).replace(" ", "0")+"0000","get pub key");
-                byte[] t=new byte[33];
-                t[0]=0x03;
-                for(int it=1;it<=32;it++){
-                    t[it]=r[it];
-                }
-                ECKey key=ECKey.fromPublicOnly(t);
-                //System.out.println(key.toString());
-                System.out.println("Address: "+key.toAddress(TestNet3Params.get()));
-            }
+//            r=exec(channel,"8008000000","registered keys"); 
+//            byte totalKeys=r[0];
+//            System.out.println("Registered keys: "+totalKeys);
+//            for(int i=0;i<totalKeys;i++){ //The first byte in r[] contains the number of keys on card
+//                r=exec(channel,"8002"+String.format("%2s",Integer.toHexString(i)).replace(" ", "0")+"0000","get pub key");
+//                byte[] t=new byte[33];
+//                t[0]=0x03;
+//                for(int it=1;it<=32;it++){
+//                    t[it]=r[it];
+//                }
+//                ECKey key=ECKey.fromPublicOnly(t);
+//                System.out.println("Address: "+key.toAddress(TestNet3Params.get()));
+//            }
             
             //exec(channel,"8008000000","free keys");
             

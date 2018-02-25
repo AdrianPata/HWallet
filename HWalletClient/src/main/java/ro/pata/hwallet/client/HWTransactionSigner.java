@@ -66,24 +66,13 @@ public class HWTransactionSigner extends StatelessTransactionSigner{
             Script scriptPubKey = txIn.getConnectedOutput().getScriptPubKey();            
             Script inputScript = txIn.getScriptSig();
             
-            /*
-            ECKey key=null;
-            try {
-                key=ECKey.fromASN1(Files.readAllBytes(Paths.get("externalKey_01.dat")));
-                key=new ECKeyHW(key);
-            } catch (IOException ex) {
-                Logger.getLogger(HWTransactionSigner.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            */
-            
             byte[] script = redeemData.redeemScript.getProgram();
             
             if(availableHWAddresses.contains(txIn.getFromAddress().toString())){
-            //if(txIn.getFromAddress().equals(key.toAddress(TestNet3Params.get()))){
                 System.out.println("Found external key...");
                 ECKey key=new ECKeyHW(txIn.getFromAddress().toString());
                 
-                //This is not a standard bitcoinj function. This one will provide to the key a hash calculated only once. 
+                //This is not a standard bitcoinj function. It will provide to the key a hash calculated only once. 
                 TransactionSignature signature = tx.calculateSignatureHW(i, key, script, Transaction.SigHash.ALL, false);
                 
                 int sigIndex = 0;

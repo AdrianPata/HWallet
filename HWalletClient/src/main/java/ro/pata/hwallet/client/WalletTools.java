@@ -174,6 +174,20 @@ public class WalletTools {
         }      
     }
     
+    //Display all addresses on smart card
+    public void showHardwareAddresses(){
+        List<String> availableHWAddresses=smartCard.getWalletAddresses();
+        
+        for(String adr:availableHWAddresses){
+            System.out.println(adr);
+        }
+    }
+    
+    //Generate new key pair on card
+    public void createHWKey(){
+        smartCard.createKeyPair();
+    }
+    
     //A string made of 5 parameters
     //1: the command to this procedure "p"
     //2: transaction hash

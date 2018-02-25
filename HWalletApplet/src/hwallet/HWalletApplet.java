@@ -185,13 +185,13 @@ public class HWalletApplet extends Applet {
     }
     
     private short getPrivKey(byte[] buffer){
-        ECPrivateKey priv=(ECPrivateKey)keyPair.getPrivate();
+        byte p1=buffer[ISO7816.OFFSET_P1];
+        if(p1>=registeredKeys){
+            ISOException.throwIt(ISO7816.SW_WRONG_P1P2);
+        }
         
-        short size=priv.getS(buffer, (short)0);
-        //buffer[1] = (byte)(size & 0xff);
-        //buffer[0] = (byte)((size >> 8) & 0xff);
-        
-        return size;
+        ECPrivateKey priv=(ECPrivateKey)keys[p1].getPrivate();        
+        return priv.getS(buffer, (short)0);
     }
     
     private short getHash(byte[] buffer){

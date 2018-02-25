@@ -44,12 +44,14 @@ public class SmartCard {
         }
     }
     
+    public void createKeyPair(){
+        exec(channel,"8001010000","key create"); //P1=01 generate keys on card
+    }
+    
     public List<String> getWalletAddresses(){
         List<String> adrList=new ArrayList<>();
         ResponseAPDU r;
-        r=exec(channel,"8008000000","get registered keys"); 
-        //The first byte in r[] contains the number of keys on card
-        byte totalKeys=r.getData()[0];
+        byte totalKeys=getTotalKeys();
         for(int i=0;i<totalKeys;i++){
             //P1 is the key number, translated into String from i
             r=exec(channel,"8002"+String.format("%2s",Integer.toHexString(i)).replace(" ", "0")+"0000","get pub key");
@@ -58,6 +60,16 @@ public class SmartCard {
         }
         
         return adrList;
+    }
+    
+    //How many keys are on the card?
+    public byte getTotalKeys(){
+        ResponseAPDU r;
+        r=exec(channel,"8008000000","get registered keys"); 
+        //The first byte in r[] contains the number of keys on card
+        byte totalKeys=r.getData()[0];
+        
+        return totalKeys;
     }
     
     public byte[] Sign(Integer keyNo,byte[] data){
@@ -73,6 +85,20 @@ public class SmartCard {
         ResponseAPDU r=exec(channel,"8007"+keyNoStr+"00"+dataLenStr+dataStr,"signature");
         
         return r.getData();
+    }
+    
+    public void exportKeys(){
+        ResponseAPDU r;
+        byte[] pub,priv;
+        byte totalKeys=getTotalKeys();
+        for(int i=0;i<totalKeys;i++){
+            //P1 is the key number, translated into String from i
+            r=exec(channel,"8003"+String.format("%2s",Integer.toHexString(i)).replace(" ", "0")+"0000","get pub key");
+            pub=r.getData();
+            //P1 is the key number, translated into String from i
+            r=exec(channel,"8003"+String.format("%2s",Integer.toHexString(i)).replace(" ", "0")+"0000","get priv key");
+            priv=r.getData();
+        }
     }
     
     public void test(){
