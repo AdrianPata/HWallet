@@ -2,9 +2,15 @@
 /HWalletClient/blockstore.dat
 /HWalletClient/blockstore2.dat
 /HWalletClient/w.dat
+/HWalletClient/blockstore3.dat
+/HWalletClient/externalKey_01.dat
 /ECTest/target/
-/SatoChipApplet/nbproject/private/
-/ledger-javacard/nbproject/private/
+/SatoChipApplet/
+/ledger-javacard/
 /HWalletApplet/build/
 /HWalletApplet/dist/
 /HWalletApplet/nbproject/private/
+/SCWallet/target/
+/SCWallet/.idea/
+/SCWallet/lib/
+/SCWallet/SCWallet.iml
